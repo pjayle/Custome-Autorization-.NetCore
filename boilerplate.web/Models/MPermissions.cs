@@ -19,6 +19,7 @@ namespace boilerplate.web.Models
         public string Icon { get; set; }
         public int ParentId { get; set; }
         public bool IsMenu { get; set; }
+        public int? SequenceNo { get; set; }
 
         public ICollection<RolePermissons> RolePermissons { get; set; }
     }

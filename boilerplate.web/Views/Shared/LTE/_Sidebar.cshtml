@@ -1,12 +1,9 @@
-﻿@using Microsoft.AspNetCore.Http
-@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+﻿@using Microsoft.AspNetCore.Mvc
+@inject boilerplate.web.Services.IUserSessionService _userSessionService
 @{
-    var manu = HttpContextAccessor.HttpContext.Session.GetString("menuString");
-
-    var sss = HttpContextAccessor.HttpContext.Session.GetString("menus");
-
-    var ss = manu;
+    var loggedInUserRolePermission = _userSessionService.GetRolePermissionSession();
 }
+
 <!--begin::Sidebar-->
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
     <!--begin::Sidebar Brand-->
@@ -51,27 +48,24 @@
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        @Html.Raw(HttpContextAccessor.HttpContext.Session.GetString("menuString"))
+                        @* @Html.Raw(HttpContextAccessor.HttpContext.Session.GetString("menuString")) *@
+                        @foreach (var item in loggedInUserRolePermission.OrderBy(s => s.SequenceNo))
+                        {
+                            @if (item.IsMenu)
+                            {
+                                <li class="nav-item">
+                                    <a asp-area="" asp-controller="@item.ModuleName" asp-action="@item.ActionName" class="nav-link active">
+                                        <i class="nav-icon bi bi-circle"></i>
+                                        <p>@item.Description</p>
+                                    </a>
+                                </li>
+                            }
+                        }
                         <li class="nav-item">
-                            <a asp-area="" asp-controller="Role" asp-action="Index" class="nav-link active">
+                            <a asp-area="" asp-controller="Home" asp-action="Privacy" class="nav-link active">
                                 <i class="nav-icon bi bi-circle"></i>
-                                <p>Roles</p>
+                                <p>Privacy</p>
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a asp-area="" asp-controller="User" asp-action="Index" class="nav-link">
-                                <i class="nav-icon bi bi-circle"></i>
-                                <p>User</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a asp-area="" asp-controller="Permissions" asp-action="Index" class="nav-link">
-                                <i class="nav-icon bi bi-circle"></i>
-                                <p>Permissions</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
                     </ul>
                 </li>

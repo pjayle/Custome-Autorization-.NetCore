@@ -1,9 +1,11 @@
 using boilerplate.web.Models;
+using boilerplate.web.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
 namespace boilerplate.web.Controllers
 {
+    //[ServiceFilter(typeof(MyAuthorization))]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -19,6 +21,11 @@ namespace boilerplate.web.Controllers
         }
 
         public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        public IActionResult AccessDenied()
         {
             return View();
         }

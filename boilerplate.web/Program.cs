@@ -1,4 +1,7 @@
+using boilerplate.web;
 using boilerplate.web.Data;
+using boilerplate.web.Mapper;
+using boilerplate.web.Services;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -13,9 +16,21 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserSessionService, UserSessionService>();
+builder.Services.AddScoped<MyAuthorization>();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<MyAuthorization>();
+});
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//THIS IS FOR AUTOMAPPER CONFIGURATION (CONFIGURE AUTOMAPPER SERVICE)
+builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 var app = builder.Build();
 

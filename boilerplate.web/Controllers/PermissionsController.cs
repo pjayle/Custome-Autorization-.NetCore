@@ -10,6 +10,7 @@ using boilerplate.web.Models;
 
 namespace boilerplate.web.Controllers
 {
+    [ServiceFilter(typeof(MyAuthorization))]
     public class PermissionsController : Controller
     {
         private readonly MasterDbContext _context;

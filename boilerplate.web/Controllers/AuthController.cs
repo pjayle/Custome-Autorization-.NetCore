@@ -1,19 +1,31 @@
-﻿using boilerplate.web.Data;
+﻿using AutoMapper;
+using Azure;
+using boilerplate.web.Data;
 using boilerplate.web.Models;
+using boilerplate.web.Models.Dto;
+using boilerplate.web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Data;
 using System.Reflection;
 using System.Text;
+using static NuGet.Packaging.PackagingConstants;
 
 namespace boilerplate.web.Controllers
 {
     public class AuthController : Controller
     {
         private readonly MasterDbContext _context;
-        public AuthController(MasterDbContext context)
+        private readonly IUserSessionService _userSessionService;
+        private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public AuthController(MasterDbContext context, IUserSessionService userSessionService, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
+            _userSessionService = userSessionService;
+            _mapper = mapper;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public IActionResult Index()
@@ -34,24 +46,25 @@ namespace boilerplate.web.Controllers
             {
                 if (_admin.Password == mUser.Password)
                 {
-                    HttpContext.Session.SetString("email", _admin.Email);
-                    HttpContext.Session.SetInt32("id", _admin.Id);
-                    HttpContext.Session.SetInt32("role_id", (int)_admin.RolesId);
-                    HttpContext.Session.SetString("name", _admin.FullName);
+                    LoggedInUser userSession = new LoggedInUser { Email = _admin.Email, RoleID = (int)_admin.RolesId, UserID = _admin.Id, UserName = _admin.FullName };
+                    _userSessionService.SetUserSession(userSession);
 
-                    int roleId = (int)HttpContext.Session.GetInt32("role_id");
-                    var ss = _context.RolePermissons.Where(s => s.RoleId == roleId).Select(z => z.PermissionId).ToList();
-                    List<MPermissions> menus = _context.MPermissions.Where(s => ss.Contains(s.Id)).ToList();
+                    var loggeInUser = _userSessionService.GetUserSession();
+                    int roleId = loggeInUser.RoleID;
 
-                    DataSet ds = new DataSet();
-                    ds = ToDataSet(menus);
-                    DataTable table = ds.Tables[0];
-                    DataRow[] parentMenus = table.Select("IsMenu = 'True'");
+                    var ss = _context.RolePermissons.Where(s => s.RoleId == loggeInUser.RoleID).Select(z => z.PermissionId).ToList();
+                    List<MPermissions> mpermission = _context.MPermissions.Where(s => ss.Contains(s.Id)).ToList();
 
-                    var sb = new StringBuilder();
-                    string menuString = GenerateUL(parentMenus, table, sb);
-                    HttpContext.Session.SetString("menuString", menuString);
-                    HttpContext.Session.SetString("menus", JsonConvert.SerializeObject(menus));
+                    var lstRolePermission = _mapper.Map<List<LoggeInUserRolePermission>>(mpermission).ToList();
+                    _userSessionService.SetRolePermissionSession(lstRolePermission.ToList());
+
+                    //ds = ToDataSet(menus);
+                    //DataTable table = ds.Tables[0];
+                    //DataRow[] parentMenus = table.Select("IsMenu = 'True'");
+
+                    //var sb = new StringBuilder();
+                    //string menuString = GenerateUL(parentMenus, table, sb);
+                    //HttpContext.Session.SetString("menuString", menuString);
 
                     return RedirectToAction(nameof(Index), "Home");
 
@@ -125,9 +138,12 @@ namespace boilerplate.web.Controllers
             return ds;
         }
 
-        public ActionResult Logout()
+        public async Task<ActionResult> Logout()
         {
-            HttpContext.Session.Clear();
+            _httpContextAccessor.HttpContext?.Session.Clear(); // Clear data first
+            await _httpContextAccessor.HttpContext?.Session.CommitAsync(); // Ensure changes are saved
+            _httpContextAccessor.HttpContext?.Response.Cookies.Delete(".AspNetCore.Session"); // Remove cook
+
             return RedirectToAction("Login", "Auth");
         }
     }
